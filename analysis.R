@@ -24,6 +24,11 @@ message("April 2019 ZEV total: ", april_tot)
 growth_rate = sum(dat$diff_count)
 message("Monthly ZEV growth rate: ", growth_rate)
 
+months_until_jan_2020 = 10
+months_until_jan_2025 = 70
+message("Estimated January 2020 ZEV total: ", april_tot+(growth_rate*months_until_jan_2020))
+message("Estimated January 2025 ZEV total: ", april_tot+(growth_rate*months_until_jan_2025))
+
 # Harmonize county names
 simpleCap <- function(x) {
   x = tolower(x)
