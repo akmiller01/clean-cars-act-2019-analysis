@@ -48,7 +48,7 @@ names(posterior.interval) <- c("LL", "UL", "Date")
 ### Join intervals to the forecast
 d3 <- left_join(d2, posterior.interval, by="Date")
 
-### Plot actual versus predicted with credible intervals for the holdout period
+### Plot actual versus predicted with credible intervals
 proj.p = ggplot(data=d3, aes(x=Date)) +
   geom_line(aes(y=Actual, colour = "Actual"), size=1.2) +
   geom_line(aes(y=Fitted, colour = "Fitted"), size=1.2, linetype=1) +
@@ -66,7 +66,29 @@ high_end = sum(d3$Actual,na.rm=T) + sum(d3$UL,na.rm=T)
 message("Estimates 2020 ZEVs: ", round(estimate_2020))
 message("Estimates 2020 ZEVs low end: ", round(low_end))
 message("Estimates 2020 ZEVs high end: ", round(high_end))
-fwrite(d3, "output/forecast.csv")
+
+d4 = copy(d3)
+d4$actual_plus_estimate = d4$Actual
+d4$actual_plus_LL = d4$Actual
+d4$actual_plus_UL = d4$Actual
+d4$actual_plus_estimate[which(is.na(d4$actual_plus_estimate))] = d4$Fitted[which(is.na(d4$actual_plus_estimate))]
+d4$actual_plus_LL[which(is.na(d4$actual_plus_LL))] = d4$LL[which(is.na(d4$actual_plus_LL))]
+d4$actual_plus_UL[which(is.na(d4$actual_plus_UL))] = d4$UL[which(is.na(d4$actual_plus_UL))]
+d4$estimated_sum = cumsum(d4$actual_plus_estimate)
+d4$LL_sum = cumsum(d4$actual_plus_LL)
+d4$UL_sum = cumsum(d4$actual_plus_UL)
+fwrite(d4, "output/monthly_forecast.csv")
+
+sum.p = ggplot(data=d4, aes(x=Date)) +
+  geom_line(data=subset(d4,Date<as.Date("2019-01-01")),aes(y=estimated_sum, colour = "Actual"), size=1.2) +
+  geom_line(data=subset(d4,Date>=as.Date("2019-01-01")),aes(y=estimated_sum, colour = "Estimate"), size=1.2, linetype=1) +
+  theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") +
+  geom_vline(xintercept=as.numeric(as.Date("2019-01-01")), linetype=2) + 
+  geom_ribbon(data=subset(d4,Date>=as.Date("2019-01-01")),aes(ymin=LL_sum, ymax=UL_sum), fill="grey", alpha=0.5) +
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  labs(title="Cumulative Maryland ZEV sales from 2011-2019, forecast to 2020")
+ggsave("output/cumulative_projection.png", sum.p, width=10, height=5)
+
 
 ### Seasonality
 ss <- AddLocalLinearTrend(list(), y)
