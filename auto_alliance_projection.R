@@ -51,11 +51,12 @@ d3 <- left_join(d2, posterior.interval, by="Date")
 ### Plot actual versus predicted with credible intervals for the holdout period
 proj.p = ggplot(data=d3, aes(x=Date)) +
   geom_line(aes(y=Actual, colour = "Actual"), size=1.2) +
-  geom_line(aes(y=Fitted, colour = "Fitted"), size=1.2, linetype=2) +
+  geom_line(aes(y=Fitted, colour = "Fitted"), size=1.2, linetype=1) +
   theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") +
-  geom_vline(xintercept=as.numeric(as.Date("2018-12-01")), linetype=2) + 
+  geom_vline(xintercept=as.numeric(as.Date("2019-01-01")), linetype=2) + 
   geom_ribbon(aes(ymin=LL, ymax=UL), fill="grey", alpha=0.5) +
-  theme(axis.text.x=element_text(angle = -90, hjust = 0))
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  labs(title="Forecasted monthly Maryland ZEV sales, 2011-2020")
 ggsave("output/projection.png", proj.p, width=10, height=5)
 
 estimate_2020 = sum(d3$Actual,na.rm=T) + sum(subset(d3,Date>as.Date("2018-12-01"))$Fitted)
