@@ -170,7 +170,7 @@ fy.cost.df = data.frame(
   type=rep(c("Lower threshold","Point estimate","Upper threshold"),3),
   cost=c(fy2020.min,fy2020.est,fy2020.max,fy2021.min,fy2021.est,fy2021.max,fy2022.min,fy2022.est,fy2022.max)
 )
-fwrite(fy.cost.df,"Maryland Tax Credit Total FY cost estimates.csv")
+fwrite(fy.cost.df,"output/Maryland Tax Credit Total FY cost estimates.csv")
 
 fy.cost.p = ggplot(data=subset(fy.cost.df,type="Point estimate"), aes(x=fy)) +
   geom_bar(stat="identity",aes(y=cost),fill="red", size=1.2) +
