@@ -15,9 +15,13 @@ dat_may = fread("data/MVA_Electric_and_Hybrid_Vehicle_Registrations_by_County_as
 setnames(dat_may,"Count","2019-05-01")
 dat_june = fread("data/MVA_Electric_and_Hybrid_Vehicle_Registrations_by_County_as_of_June_2019.csv")
 setnames(dat_june,"Count","2019-06-01")
+dat_august = fread("data/MVA_Electric_and_Hybrid_Vehicle_Registrations_by_County_as_of_August_2019.csv")
+setnames(dat_august,"Count","2019-08-01")
 dat_reg = merge(dat_march,dat_april)
 dat_reg = merge(dat_reg,dat_may)
 dat_reg = merge(dat_reg,dat_june)
+dat_reg = merge(dat_reg,dat_august)
+
 dat_melt = melt(dat_reg,id.vars=c("Fuel_Category","County"),variable.name="Date")
 dat_cast = dcast(dat_melt,County+Date~Fuel_Category)
 names(dat_cast) = make.names(names(dat_cast))
@@ -30,13 +34,14 @@ dat_tab$Date = as.Date(dat_tab$Date)
 dat_tab$BEV = c(NA,diff(dat_tab$BEV))
 dat_tab$PHEV = c(NA,diff(dat_tab$PHEV))
 
-missing_months = data.frame(Date=as.Date(c("2019-01-01","2019-02-01")))
+missing_months = data.frame(Date=as.Date(c("2019-01-01","2019-02-01", "2019-07-01")))
 
 dat_alliance = fread("data/alliance_dat.csv")
 dat_alliance$Date = as.Date(dat_alliance$Date,format="%m/%d/%y")
 
 # Combine all our sources
 dat = rbindlist(list(dat_alliance,missing_months,dat_tab),fill=T)
+dat = dat[order(dat$Date)]
 
 bev_y = ts(dat$BEV, frequency=12, start=c(2011,1))
 
@@ -49,9 +54,9 @@ bev_bsts.model <- bsts(bev_y, state.specification = bev_ss, niter = 500, ping=0,
 bev_burn <- SuggestBurn(0.1, bev_bsts.model)
 
 ### Predict, FY 2020 ends June 2020.
-# Predict until June 2022 for 3 FY
+# Predict until August 2022 for 3 FY
 bev_p <- predict.bsts(bev_bsts.model, horizon = 36, burn = bev_burn, quantiles = c(.025, .975))
-bev_p.ts = ts(rep(NA,36),frequency=12,start=c(2019,7))
+bev_p.ts = ts(rep(NA,36),frequency=12,start=c(2019,9))
 ### Actual versus predicted
 bev_d2 <- data.frame(
   # fitted values and predictions
@@ -66,7 +71,7 @@ names(bev_d2) <- c("Fitted", "Actual", "Date")
 bev_posterior.interval <- cbind.data.frame(
   as.numeric(bev_p$interval[1,]),
   as.numeric(bev_p$interval[2,]), 
-  subset(bev_d2, Date>as.Date("2019-06-01"))$Date)
+  subset(bev_d2, Date>as.Date("2019-08-01"))$Date)
 names(bev_posterior.interval) <- c("LL", "UL", "Date")
 
 ### Join intervals to the forecast
@@ -88,7 +93,7 @@ phev_burn <- SuggestBurn(0.1, phev_bsts.model)
 ### Predict, FY 2020 ends June 2020.
 # Predict until June 2022 for 3 FY
 phev_p <- predict.bsts(phev_bsts.model, horizon = 36, burn = phev_burn, quantiles = c(.025, .975))
-phev_p.ts = ts(rep(NA,36),frequency=12,start=c(2019,7))
+phev_p.ts = ts(rep(NA,36),frequency=12,start=c(2019,9))
 ### Actual versus predicted
 phev_d2 <- data.frame(
   # fitted values and predictions
@@ -103,7 +108,7 @@ names(phev_d2) <- c("Fitted", "Actual", "Date")
 phev_posterior.interval <- cbind.data.frame(
   as.numeric(phev_p$interval[1,]),
   as.numeric(phev_p$interval[2,]), 
-  subset(phev_d2, Date>as.Date("2019-06-01"))$Date)
+  subset(phev_d2, Date>as.Date("2019-08-01"))$Date)
 names(phev_posterior.interval) <- c("LL", "UL", "Date")
 
 ### Join intervals to the forecast
@@ -153,17 +158,17 @@ fy2020 = subset(d3_unfunded,Date<as.Date("2020-07-01"))
 fy2021 = subset(d3_unfunded,Date>=as.Date("2020-07-01") & Date<as.Date("2021-07-01"))
 fy2022 = subset(d3_unfunded,Date>=as.Date("2021-07-01") & Date<as.Date("2022-07-01"))
 
-fy2020.min = sum(fy2020$LL.cost)
-fy2020.est = sum(fy2020$Fitted.cost)
-fy2020.max = sum(fy2020$UL.cost)
+fy2020.min = sum(fy2020$LL.cost, na.rm=T)
+fy2020.est = sum(fy2020$Fitted.cost, na.rm=T)
+fy2020.max = sum(fy2020$UL.cost, na.rm=T)
 
-fy2021.min = sum(fy2021$LL.cost)
-fy2021.est = sum(fy2021$Fitted.cost)
-fy2021.max = sum(fy2021$UL.cost)
+fy2021.min = sum(fy2021$LL.cost, na.rm=T)
+fy2021.est = sum(fy2021$Fitted.cost, na.rm=T)
+fy2021.max = sum(fy2021$UL.cost, na.rm=T)
 
-fy2022.min = sum(fy2022$LL.cost)
-fy2022.est = sum(fy2022$Fitted.cost)
-fy2022.max = sum(fy2022$UL.cost)
+fy2022.min = sum(fy2022$LL.cost, na.rm=T)
+fy2022.est = sum(fy2022$Fitted.cost, na.rm=T)
+fy2022.max = sum(fy2022$UL.cost, na.rm=T)
 
 fy.cost.df = data.frame(
   fy=c(2020,2020,2020,2021,2021,2021,2022,2022,2022),
